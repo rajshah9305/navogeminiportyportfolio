@@ -12,26 +12,45 @@ export function Work() {
   useEffect(() => {
     const isDesktop = () => window.innerWidth > 1024;
     const slideCount = projects.length;
+    
+    // Set dynamic height based on number of projects
+    if (wrapperRef.current && isDesktop()) {
+      wrapperRef.current.style.height = `${slideCount * 100}vh`;
+    }
+
+    let ticking = false;
 
     const handleScroll = () => {
-      if (!wrapperRef.current || !trackRef.current || !isDesktop()) return;
-      
-      const rect = wrapperRef.current.getBoundingClientRect();
-      const maxScroll = wrapperRef.current.offsetHeight - window.innerHeight;
-      
-      let progress = 0;
-      if (rect.top <= 0) {
-        progress = Math.min(1, Math.abs(rect.top) / maxScroll);
-      }
-      
-      const moveX = progress * (slideCount - 1) * window.innerWidth;
-      trackRef.current.style.transform = `translateX(-${moveX}px)`;
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (!wrapperRef.current || !trackRef.current || !isDesktop()) {
+            ticking = false;
+            return;
+          }
+          
+          const rect = wrapperRef.current.getBoundingClientRect();
+          const maxScroll = wrapperRef.current.offsetHeight - window.innerHeight;
+          
+          let progress = 0;
+          if (rect.top <= 0) {
+            progress = Math.min(1, Math.abs(rect.top) / maxScroll);
+          }
+          
+          const moveX = progress * (slideCount - 1) * window.innerWidth;
+          trackRef.current.style.transform = `translate3d(-${moveX}px, 0, 0)`;
 
-      const current = Math.min(slideCount, Math.floor(progress * slideCount) + 1);
-      setCurrentSlide(current);
+          const current = Math.min(slideCount, Math.floor(progress * slideCount) + 1);
+          setCurrentSlide(current);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+    // Trigger once on load
+    handleScroll();
+    
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
